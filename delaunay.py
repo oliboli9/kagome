@@ -6,21 +6,6 @@ from mpl_toolkits.mplot3d import Axes3D
 from ase.io.trajectory import Trajectory
 
 
-def calculate_midpoint(point1, point2):
-    return (point1 + point2) / 2
-
-
-def find_triangle_midpoints(tri, points):
-    midpoints = []
-    for simplex in tri.simplices:
-        for i in range(3):
-            point1 = points[simplex[i]]
-            point2 = points[
-                simplex[(i + 1) % 3]
-            ]  # Ensures the last point connects to the first
-            midpoint = calculate_midpoint(point1, point2)
-            midpoints.append(midpoint)
-    return midpoints
 
 
 def repeat(n, points):
@@ -53,7 +38,7 @@ def find_neighbors(tri, points_2d):
 
 
 def make_delaunay_triangulation(traj_path):
-    traj = Trajectory(f"/Users/olive/Desktop/bsc thesis/{traj_path}")
+    traj = Trajectory(f"{traj_path}")
     atoms = traj[-1]
 
     coords = atoms.get_positions()
@@ -63,10 +48,10 @@ def make_delaunay_triangulation(traj_path):
 
     neighbours = find_neighbors(tri, points_2d)
     amplitude = traj_path[13:16]
-    return tri, points, points_2d, neighbours, amplitude
+    return atoms, tri, points, points_2d, neighbours, amplitude
 
 
-def plot_delaunay(tri, points, points_2d, neighbours, amplitude):
+def plot_delaunay(tri, points, points_2d, neighbours, amplitude, path):
     nine_neighbours = np.array([len(nbrs) == 9 for nbrs in neighbours])
     eight_neighbours = np.array([len(nbrs) == 8 for nbrs in neighbours])
     seven_neighbours = np.array([len(nbrs) == 7 for nbrs in neighbours])
@@ -189,7 +174,7 @@ def plot_delaunay(tri, points, points_2d, neighbours, amplitude):
     # ax2.set_xlim(30, 60)
     # ax2.set_ylim(30, 60)
     # plt.show()
-    plt.savefig(f"delaunay-triangulations.png", dpi=300)
+    plt.savefig(f"{path}.png", dpi=300)
 
 
 def print_neighbour_counts(points, neighbours):
@@ -217,31 +202,11 @@ def print_neighbour_counts(points, neighbours):
 
 
 trajectory_paths = [
-    # "30011/bfgs-0-1.0-2000-200-50.traj",
-    # "30011/bfgs-0-3.0-2000-200-50.traj",
-    # "30011/bfgs-0-5.0-2000-200-50.traj",
-    # "20011/bfgs-0-2.0-2000-200-50.traj",
-    # "20011/bfgs-1-2.0-2000-200-50.traj",
-    # "20011/bfgs-2-2.0-2000-200-50.traj",
-    # "30011/bfgs-0-7.0-2000-200-50.traj",
-    # "40012/bfgs-28-3-2000-200-30.traj"
-    "99993/bfgs-0-3-2000-500-50.traj",
-    "99993/bfgs-1-3-2000-500-50.traj",
-    "99993/bfgs-2-3-2000-500-50.traj",
-    "99993/bfgs-3-3-2000-500-50.traj",
+    "trajectories/10001/bfgs-0-5-130-1500-150-50.traj",
 ]
 
-for path in trajectory_paths:
-    tri, points, points_2d, neighbours, amplitude = make_delaunay_triangulation(path)
-    print_neighbour_counts(points, neighbours)
-    plot_delaunay(tri, points, points_2d, neighbours, amplitude)
+# for path in trajectory_paths:
+#     atoms, tri, points, points_2d, neighbours, amplitude = make_delaunay_triangulation(path)
+#     print_neighbour_counts(points, neighbours)
+#     plot_delaunay(tri, points, points_2d, neighbours, amplitude, '')
 
-    kagome_positions = find_triangle_midpoints(tri, points)
-    cell = Cell.fromcellpar([30, 30, 30, 90, 90, 90])
-
-    kagome_atoms = Atoms(
-        "H" * len(kagome_positions),
-        positions=kagome_positions,
-        cell=cell,
-        pbc=(1, 1, 0),
-    )

@@ -3,6 +3,7 @@ import numpy as np
 from scipy.integrate import dblquad
 import sympy as sp
 
+
 class Surface:
     def __init__(self, f, density=None, n=None):
         x, y = sp.symbols("x y")
@@ -32,7 +33,6 @@ class Surface:
         f_num = sp.lambdify((x, y), self.f, "numpy")
         return f_num(x_vals, y_vals)
 
-
     def dx(self, x_vals, y_vals):
         x, y = sp.symbols("x y")
         df_dx_num = sp.lambdify((x, y), self.df_dx, "numpy")
@@ -42,6 +42,7 @@ class Surface:
         x, y = sp.symbols("x y")
         df_dy_num = sp.lambdify((x, y), self.df_dy, "numpy")
         return df_dy_num(x_vals, y_vals)
+
 
 class SurfaceConstraint:
     def __init__(self, surface):
