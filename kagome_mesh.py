@@ -91,9 +91,9 @@ def classify_edges(midpoint_triangles, points, tri):
             # Classify the edge
             if min_edge is not None:
                 edge_classification[(p1, p2)] = color_cycle[color_index]
-                edge_classification[(points[min_edge], points[(min_edge + 1) % 3])] = (
-                    color_cycle[color_index]
-                )
+                edge_classification[
+                    (points[min_edge], points[(min_edge + 1) % 3])
+                ] = color_cycle[color_index]
 
             color_index = (color_index + 1) % 3
 

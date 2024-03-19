@@ -6,8 +6,6 @@ from mpl_toolkits.mplot3d import Axes3D
 from ase.io.trajectory import Trajectory
 
 
-
-
 def repeat(n, points):
     repeated_points = []
     for i in range(n):  # Repeat in x-direction
@@ -209,4 +207,3 @@ trajectory_paths = [
 #     atoms, tri, points, points_2d, neighbours, amplitude = make_delaunay_triangulation(path)
 #     print_neighbour_counts(points, neighbours)
 #     plot_delaunay(tri, points, points_2d, neighbours, amplitude, '')
-
