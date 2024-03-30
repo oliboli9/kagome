@@ -35,21 +35,16 @@ def find_neighbors(tri, points_2d):
     return [list(set(nbr)) for nbr in neighbors]
 
 
-def make_delaunay_triangulation(traj_path):
-    traj = Trajectory(f"{traj_path}")
-    atoms = traj[-1]
-
-    coords = atoms.get_positions()
-    points = repeat(3, coords)
+def make_delaunay_triangulation(points):
     points_2d = points[:, :2]
     tri = Delaunay(points_2d)
 
     neighbours = find_neighbors(tri, points_2d)
-    amplitude = traj_path[13:16]
-    return atoms, tri, points, points_2d, neighbours, amplitude
+    return tri, neighbours
 
 
-def plot_delaunay(tri, points, points_2d, neighbours, amplitude, path):
+def plot_delaunay(tri, points, neighbours, path):
+    points_2d = points[:, :2]
     nine_neighbours = np.array([len(nbrs) == 9 for nbrs in neighbours])
     eight_neighbours = np.array([len(nbrs) == 8 for nbrs in neighbours])
     seven_neighbours = np.array([len(nbrs) == 7 for nbrs in neighbours])
@@ -60,7 +55,7 @@ def plot_delaunay(tri, points, points_2d, neighbours, amplitude, path):
 
     fig = plt.figure(figsize=(12, 6))
     fig.suptitle(
-        f"Delaunay triangulation on Sine curve with amplitude {amplitude}",
+        f"Delaunay triangulation on Sine curve",  # with amplitude {amplitude}",
         fontsize=16,
     )
 
@@ -197,13 +192,3 @@ def print_neighbour_counts(points, neighbours):
     # Now filtered_count_frequency is a dictionary where keys are the number of neighbors,
     # and values are the frequencies of these neighbor counts for filtered points
     print(filtered_count_frequency)
-
-
-trajectory_paths = [
-    "trajectories/10001/bfgs-0-5-130-1500-150-50.traj",
-]
-
-# for path in trajectory_paths:
-#     atoms, tri, points, points_2d, neighbours, amplitude = make_delaunay_triangulation(path)
-#     print_neighbour_counts(points, neighbours)
-#     plot_delaunay(tri, points, points_2d, neighbours, amplitude, '')

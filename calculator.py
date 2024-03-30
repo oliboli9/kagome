@@ -64,7 +64,11 @@ class KagomeRadialPotential(Calculator):
     """
 
     implemented_properties = ["energy", "forces"]
-    default_parameters = {"V0": 1.0, "r0": 1}
+    default_parameters = {
+        "V0": 1.0,
+        "r0": 1,
+        "K0": 10000.0,
+    }  # this config makes the radial and kagome force have the same order of magnitude
 
     nolabel = True
 
@@ -76,6 +80,8 @@ class KagomeRadialPotential(Calculator):
             Energy scale, default 1.0
         r0: float
             Range of quadratic potential, default 1.0
+        K0: float
+            Kagome energy scale, default 10000.0
         neighbour_dict: dict (required)
             A dictionary where for each kagome atom its 4 kagome neighbours are stored as pairs that lie on the same weaver
         """
@@ -97,6 +103,7 @@ class KagomeRadialPotential(Calculator):
 
         V0 = self.parameters.V0
         r0 = self.parameters.r0
+        K0 = self.parameters.K0
 
         forces = np.zeros((len(self.atoms), 3))
         preF = -2 * V0 / r0
@@ -120,31 +127,40 @@ class KagomeRadialPotential(Calculator):
         positions = atoms.get_positions()
         # forces = np.zeros((len(atoms), 3))
         # energy = 0
+        # print(f"radial force:{forces[0]}")
 
         for atom_index, neighbours in neighbour_dict.items():
-            for n1, n2 in neighbours:
-                vec1 = positions[n1] - positions[atom_index]
-                vec2 = positions[n2] - positions[atom_index]
+            if len(neighbours) == 2:
+                n1, n2 = neighbours[0]
+                n3, n4 = neighbours[1]
+                pairs = [(n1, n3), (n2, n4)]
+                for n1, n2 in pairs:
+                    vec1 = positions[n1] - positions[atom_index]
+                    vec2 = positions[n2] - positions[atom_index]
 
-                norm_vec1 = np.linalg.norm(vec1)
-                norm_vec2 = np.linalg.norm(vec2)
-                vec1_normalized = vec1 / norm_vec1
-                vec2_normalized = vec2 / norm_vec2
+                    norm_vec1 = np.linalg.norm(vec1)
+                    norm_vec2 = np.linalg.norm(vec2)
+                    vec1_normalized = vec1 / norm_vec1
+                    vec2_normalized = vec2 / norm_vec2
 
-                dot_product = np.dot(vec1_normalized, vec2_normalized)
-                energy_contribution = V0 * (1 - dot_product)
-                energy += energy_contribution
+                    dot_product = np.dot(vec1_normalized, vec2_normalized)
+                    energy_contribution = K0 * (1 - dot_product)
+                    energy += energy_contribution
 
-                force_direction1 = (
-                    vec2_normalized - dot_product * vec1_normalized
-                ) / norm_vec1
-                force_direction2 = (
-                    vec1_normalized - dot_product * vec2_normalized
-                ) / norm_vec2
+                    # Calculate force contributions
+                    # Derivative of dot product w.r.t. positions
+                    force_direction1 = (
+                        vec2_normalized - dot_product * vec1_normalized
+                    ) / norm_vec1
+                    force_direction2 = (
+                        vec1_normalized - dot_product * vec2_normalized
+                    ) / norm_vec2
 
-                forces[atom_index] += V0 * (force_direction1 + force_direction2)
-                forces[n1] -= V0 * force_direction1
-                forces[n2] -= V0 * force_direction2
+                    forces[atom_index] += K0 * (force_direction1 + force_direction2)
+                    forces[n1] -= K0 * force_direction1
+                    forces[n2] -= K0 * force_direction2
+
+                    # print(f"kagome force:{[force_direction1, force_direction2]}")
 
         self.results["energy"] = energy
         self.results["forces"] = forces
@@ -192,38 +208,6 @@ class KagomePotential(Calculator):
         positions = atoms.get_positions()
         forces = np.zeros((len(atoms), 3))
         energy = 0
-
-        # kagome_list = list(neighbour_dict.keys())
-        # # index = kagome_list.index(key_to_find)
-
-        # for atom, neighbours in neighbour_dict.items():
-        #     atom_index = kagome_list.index(atom)
-        #     for n1, n2 in neighbours:
-        #         n1_index = kagome_list.index(n1)
-        #         n2_index = kagome_list.index(n2)
-        #         vec1 = np.array(n1) - np.array(atom)
-        #         vec2 = np.array(n2) - np.array(atom)
-
-        #         norm_vec1 = np.linalg.norm(vec1)
-        #         norm_vec2 = np.linalg.norm(vec2)
-        #         vec1_normalized = vec1 / norm_vec1
-        #         vec2_normalized = vec2 / norm_vec2
-
-        #         dot_product = np.dot(vec1_normalized, vec2_normalized)
-        #         energy_contribution = V0 * (1 - dot_product)
-        #         energy += energy_contribution
-
-        #         # F = -dU/dx
-        #         force_direction1 = (
-        #             vec2_normalized - dot_product * vec1_normalized
-        #         ) / norm_vec1
-        #         force_direction2 = (
-        #             vec1_normalized - dot_product * vec2_normalized
-        #         ) / norm_vec2
-
-        #         forces[atom_index] += V0 * (force_direction1 + force_direction2)
-        #         forces[n1_index] -= V0 * force_direction1
-        #         forces[n2_index] -= V0 * force_direction2
 
         for atom_index, neighbours in neighbour_dict.items():
             if len(neighbours) == 2:
