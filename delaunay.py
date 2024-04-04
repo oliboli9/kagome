@@ -170,7 +170,7 @@ def plot_delaunay(tri, points, neighbours, path):
     plt.savefig(f"{path}.png", dpi=300)
 
 
-def print_neighbour_counts(points, neighbours):
+def get_neighbour_counts(points, neighbours):
     # Step 1: Filter points based on x and y range
     range_filter = (
         (points[:, 0] >= 30)
@@ -191,4 +191,4 @@ def print_neighbour_counts(points, neighbours):
 
     # Now filtered_count_frequency is a dictionary where keys are the number of neighbors,
     # and values are the frequencies of these neighbor counts for filtered points
-    print(filtered_count_frequency)
+    return (filtered_count_frequency)

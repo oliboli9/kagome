@@ -62,7 +62,7 @@ class PeriodicSurface:
         y_vals = positions[:, 1]
         x, y = sp.symbols("x y")
         f_num = sp.lambdify((x, y), self.f, "numpy")
-        return np.vstack(x_vals, y_vals, (f_num(x_vals, y_vals)))
+        return np.vstack((x_vals, y_vals, (f_num(x_vals, y_vals)))).T
 
     def normals(self, positions):
         x = positions[:, 0]
