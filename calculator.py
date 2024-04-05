@@ -4,6 +4,35 @@ from ase.calculators.calculator import Calculator
 from ase.neighborlist import neighbor_list
 
 
+def apply_mic(distance, cell, pbc):
+    """
+    Apply the minimum image convention to a distance vector.
+
+    Parameters:
+    distance (array): The distance vector between two atoms.
+    cell (array): The simulation cell dimensions.
+    pbc (array): Periodic boundary conditions.
+
+    Returns:
+    array: Adjusted distance vector following MIC.
+    """
+    for dim in range(3):
+        if pbc[dim]:
+            cell_length = cell[dim, dim]
+            half_cell = cell_length / 2
+
+            # Check if distance[dim] is a scalar and adjust the distance
+            if isinstance(distance[dim], (float, int)):
+                while distance[dim] > half_cell:
+                    distance[dim] -= cell_length
+                while distance[dim] < -half_cell:
+                    distance[dim] += cell_length
+            else:
+                raise ValueError(f"Distance at dimension {dim} is not a scalar.")
+
+    return distance
+
+
 class RadialPotential(Calculator):
     """Radial potential."""
 
@@ -125,42 +154,44 @@ class KagomeRadialPotential(Calculator):
 
         neighbour_dict = self.neighbour_dict
         positions = atoms.get_positions()
+        cell = atoms.get_cell()
+        pbc = atoms.get_pbc()
         # forces = np.zeros((len(atoms), 3))
         # energy = 0
         # print(f"radial force:{forces[0]}")
 
         for atom_index, neighbours in neighbour_dict.items():
-            if len(neighbours) == 2:
-                n1, n2 = neighbours[0]
-                n3, n4 = neighbours[1]
-                pairs = [(n1, n3), (n2, n4)]
-                for n1, n2 in pairs:
-                    vec1 = positions[n1] - positions[atom_index]
-                    vec2 = positions[n2] - positions[atom_index]
+            n1, n2 = neighbours[0]
+            n3, n4 = neighbours[1]
+            pairs = [(n1, n3), (n2, n4)]
 
-                    norm_vec1 = np.linalg.norm(vec1)
-                    norm_vec2 = np.linalg.norm(vec2)
-                    vec1_normalized = vec1 / norm_vec1
-                    vec2_normalized = vec2 / norm_vec2
+            for n1, n2 in pairs:
+                vec1 = apply_mic(positions[n1] - positions[atom_index], cell, pbc)
+                vec2 = apply_mic(positions[n2] - positions[atom_index], cell, pbc)
 
-                    dot_product = np.dot(vec1_normalized, vec2_normalized)
-                    energy_contribution = K0 * (1 - dot_product)
-                    energy += energy_contribution
+                norm_vec1 = np.linalg.norm(vec1)
+                norm_vec2 = np.linalg.norm(vec2)
+                vec1_normalized = vec1 / norm_vec1
+                vec2_normalized = vec2 / norm_vec2
 
-                    # Calculate force contributions
-                    # Derivative of dot product w.r.t. positions
-                    force_direction1 = (
-                        vec2_normalized - dot_product * vec1_normalized
-                    ) / norm_vec1
-                    force_direction2 = (
-                        vec1_normalized - dot_product * vec2_normalized
-                    ) / norm_vec2
+                dot_product = np.dot(vec1_normalized, vec2_normalized)
+                energy_contribution = V0 * (1 - dot_product)
+                energy += energy_contribution
 
-                    forces[atom_index] += K0 * (force_direction1 + force_direction2)
-                    forces[n1] -= K0 * force_direction1
-                    forces[n2] -= K0 * force_direction2
+                # Calculate force contributions
+                # Derivative of dot product w.r.t. positions
+                force_direction1 = (
+                    vec2_normalized - dot_product * vec1_normalized
+                ) / norm_vec1
+                force_direction2 = (
+                    vec1_normalized - dot_product * vec2_normalized
+                ) / norm_vec2
 
-                    # print(f"kagome force:{[force_direction1, force_direction2]}")
+                forces[atom_index] += K0 * (force_direction1 + force_direction2)
+                forces[n1] -= K0 * force_direction1
+                forces[n2] -= K0 * force_direction2
+
+                # print(f"kagome force:{[force_direction1, force_direction2]}")
 
         self.results["energy"] = energy
         self.results["forces"] = forces
@@ -206,39 +237,40 @@ class KagomePotential(Calculator):
         V0 = self.parameters.V0
         neighbour_dict = self.neighbour_dict
         positions = atoms.get_positions()
+        cell = atoms.get_cell()
+        pbc = atoms.get_pbc()
         forces = np.zeros((len(atoms), 3))
         energy = 0
 
         for atom_index, neighbours in neighbour_dict.items():
-            if len(neighbours) == 2:
-                n1, n2 = neighbours[0]
-                n3, n4 = neighbours[1]
-                pairs = [(n1, n3), (n2, n4)]
-                for n1, n2 in pairs:
-                    vec1 = positions[n1] - positions[atom_index]
-                    vec2 = positions[n2] - positions[atom_index]
+            n1, n2 = neighbours[0]
+            n3, n4 = neighbours[1]
+            pairs = [(n1, n3), (n2, n4)]
 
-                    norm_vec1 = np.linalg.norm(vec1)
-                    norm_vec2 = np.linalg.norm(vec2)
-                    vec1_normalized = vec1 / norm_vec1
-                    vec2_normalized = vec2 / norm_vec2
+            for n1, n2 in pairs:
+                vec1 = apply_mic(positions[n1] - positions[atom_index], cell, pbc)
+                vec2 = apply_mic(positions[n2] - positions[atom_index], cell, pbc)
 
-                    dot_product = np.dot(vec1_normalized, vec2_normalized)
-                    energy_contribution = V0 * (1 - dot_product)
-                    energy += energy_contribution
+                norm_vec1 = np.linalg.norm(vec1)
+                norm_vec2 = np.linalg.norm(vec2)
+                vec1_normalized = vec1 / norm_vec1
+                vec2_normalized = vec2 / norm_vec2
 
-                    # Calculate force contributions
-                    # Derivative of dot product w.r.t. positions
-                    force_direction1 = (
-                        vec2_normalized - dot_product * vec1_normalized
-                    ) / norm_vec1
-                    force_direction2 = (
-                        vec1_normalized - dot_product * vec2_normalized
-                    ) / norm_vec2
+                dot_product = np.dot(vec1_normalized, vec2_normalized)
+                energy_contribution = V0 * (1 - dot_product)
+                energy += energy_contribution
 
-                    forces[atom_index] += V0 * (force_direction1 + force_direction2)
-                    forces[n1] -= V0 * force_direction1
-                    forces[n2] -= V0 * force_direction2
+                # Calculate force contributions
+                force_direction1 = (
+                    vec2_normalized - dot_product * vec1_normalized
+                ) / norm_vec1
+                force_direction2 = (
+                    vec1_normalized - dot_product * vec2_normalized
+                ) / norm_vec2
+
+                forces[atom_index] += V0 * (force_direction1 + force_direction2)
+                forces[n1] -= V0 * force_direction1
+                forces[n2] -= V0 * force_direction2
 
         self.results["energy"] = energy
         self.results["forces"] = forces

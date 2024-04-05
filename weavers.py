@@ -11,7 +11,7 @@ from kagome import (
     create_indices_dict,
 )
 from calculator import RadialPotential, KagomePotential, KagomeRadialPotential
-from delaunay import repeat, make_delaunay_triangulation, print_neighbour_counts
+from delaunay import repeat, make_delaunay_triangulation
 
 
 def place_kagome_atoms(atoms, calculator: Calculator, repeats):
@@ -96,13 +96,58 @@ def straighten_and_plot_weavers(kagome_atoms, neighbour_dict):
     ax2.set_ylabel("Y coordinate")
 
 
-# trajectory_paths = ["trajectories/10001/bfgs-3-3-110-2000-500-50.traj"]
-trajectory_paths = ["bfgs-4-3-22-1500-150-50.traj"]
-# trajectory_paths = ["polar.traj"]
+def straighten_and_plot_weavers_periodic(kagome_atoms, neighbour_dict):
+    fig, (ax1, ax2) = plt.subplots(1, 2)
+    positions = kagome_atoms.get_positions()
 
-for path in trajectory_paths:
-    traj = Trajectory(f"{path}")
-    atoms = traj[-1]
-    kagome_atoms, neighbour_dict = place_kagome_atoms(atoms, 3)
-    straighten_and_plot_weavers(kagome_atoms, neighbour_dict)
-    plt.show()
+    def is_periodic_neighbor(pos1, pos2):
+        return abs(pos1[0] - pos2[0]) > 15 or abs(pos1[1] - pos2[1]) > 15
+
+    for point, neighbour_pairs in neighbour_dict.items():
+        for neighbours in neighbour_pairs:
+            for neighbour in neighbours:
+                if not is_periodic_neighbor(positions[point], positions[neighbour]):
+                    ax1.plot(
+                        [positions[point][0], positions[neighbour][0]],
+                        [positions[point][1], positions[neighbour][1]],
+                        "b-",
+                        linewidth=0.5,
+                    )
+
+    ax1.set_title("Weavers")
+    ax1.set_xlabel("X coordinate")
+    ax1.set_ylabel("Y coordinate")
+
+    local_minimisation = BFGS(kagome_atoms)
+    local_minimisation.run(steps=20)
+
+    positions = kagome_atoms.get_positions()
+    for point, neighbour_pairs in neighbour_dict.items():
+        for neighbours in neighbour_pairs:
+            for neighbour in neighbours:
+                if not is_periodic_neighbor(positions[point], positions[neighbour]):
+                    ax2.plot(
+                        [positions[point][0], positions[neighbour][0]],
+                        [positions[point][1], positions[neighbour][1]],
+                        "b-",
+                        linewidth=0.5,
+                    )
+
+    ax2.set_title("Weavers")
+    ax2.set_xlabel("X coordinate")
+    ax2.set_ylabel("Y coordinate")
+
+
+# Your code to call the function goes here
+
+
+# # trajectory_paths = ["trajectories/10001/bfgs-3-3-110-2000-500-50.traj"]
+# trajectory_paths = ["bfgs-4-3-22-1500-150-50.traj"]
+# # trajectory_paths = ["polar.traj"]
+
+# for path in trajectory_paths:
+#     traj = Trajectory(f"{path}")
+#     atoms = traj[-1]
+#     kagome_atoms, neighbour_dict = place_kagome_atoms(atoms, KagomePotential, 3)
+#     straighten_and_plot_weavers(kagome_atoms, neighbour_dict)
+#     plt.show()
