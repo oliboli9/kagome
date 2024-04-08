@@ -2,6 +2,7 @@ import math
 import numpy as np
 from scipy.integrate import dblquad
 import sympy as sp
+from sympy.vector import CoordSys3D
 from scipy.optimize import minimize
 
 
@@ -87,9 +88,10 @@ class PeriodicSurface:
 
 
 class TorusSurface:
-    def __init__(self, R, r, centre):
+    def __init__(self, R, r, centre, n):
         self.R = R  # Major radius
         self.r = r  # Minor radius
+        self.n = n
         theta, phi, R, r = sp.symbols("theta phi R r")
         self.centre = np.array(centre)
         cx, cy, cz = centre
@@ -105,7 +107,7 @@ class TorusSurface:
             positions[:, 0], positions[:, 1], positions[:, 2]
         )
         theta, phi = sp.symbols("theta phi")
-        N = sp.CoordSys3D("N")
+        N = CoordSys3D("N")
 
         x, y, z = self.f
         P = x * N.i + y * N.j + z * N.k
