@@ -1,4 +1,5 @@
 import numpy as np
+from typing import Optional
 
 from ase import Atoms, units
 from ase.cell import Cell
@@ -8,75 +9,94 @@ from ase.md.velocitydistribution import MaxwellBoltzmannDistribution
 from ase.md.verlet import VelocityVerlet
 from ase.optimize import BFGS
 
-from calculator import RadialPotential
-from surface import PeriodicSurface, SurfaceConstraint
+from calculator import Calculator
+from surface import Surface, SurfaceConstraint
 
 
-def setup_periodic_atoms(stream, surface, r0=4):
-    cell = Cell.fromcellpar([30, 30, 30, 90, 90, 90])
-    random_positions = stream.random((surface.n, 3))
-    cartesian_positions = np.dot(random_positions, cell)
+class AnnealingSimulator:
+    def __init__(self, surface, calculator):
+        self.surface: Surface = surface
+        self.calculator: Calculator = calculator
 
-    atoms = Atoms(
-        "Au" * surface.n, positions=cartesian_positions, cell=cell, pbc=(1, 1, 0)
-    )
-    atoms.calc = RadialPotential(r0=r0)
-    constraint = SurfaceConstraint(surface)
-    atoms.set_constraint(constraint)
-
-    potential_energy = atoms.get_potential_energy()
-    print("Potential energy:", potential_energy, "eV")
-    return atoms
-
-
-def anneal(seed, n, amp, surface, atoms, start_temp, cooling_rate, end_temp, fmax=0.05):
-    # dyn = VelocityVerlet(atoms, timestep=2 * units.fs)
-    dyn = Langevin(
-        atoms,
-        timestep=2 * units.fs,
-        temperature_K=10,
-        friction=0.001 / units.fs,
-    )
-    traj_annealing = Trajectory(
-        f"trajectories/{seed}/langevin-{n}-{amp}-{surface.n}-{start_temp}-{cooling_rate}-{end_temp}.traj",
-        "a",
-        atoms,
-    )
-
-    def wrap_and_write_annealing():
-        # atoms.wrap()
-        traj_annealing.write(atoms)
-
-    # dyn.attach(wrap_and_write_annealing, interval=500)
-
-    iters = round((start_temp - end_temp) / cooling_rate)
-    for i in range(iters):
-        temp = round(start_temp - cooling_rate * i)
-        print(str(n) + ", " + str(i) + f": Setting temp {temp}")
-        MaxwellBoltzmannDistribution(
-            atoms, temperature_K=(start_temp - cooling_rate * i)
+    def setup_atoms(self, stream):
+        cell = Cell.fromcellpar([30, 30, 30, 90, 90, 90])
+        random_positions = stream.random((self.surface.n, 3))
+        cartesian_positions = np.dot(random_positions, cell)
+        atoms = Atoms(
+            "Au" * self.surface.n,
+            positions=cartesian_positions,
+            cell=cell,
+            pbc=(1, 1, 0),
         )
-        atoms.wrap()
-        dyn.run(10000)
-    print(str(n) + ", " + str(iters + 1) + f": Setting temp {end_temp}")
-    MaxwellBoltzmannDistribution(atoms, temperature_K=end_temp)
-    dyn.run(15000)
+        atoms.calc = self.calculator
+        constraint = SurfaceConstraint(self.surface)
+        atoms.set_constraint(constraint)
 
-    local_minimisation = BFGS(atoms)
-    traj_bfgs = Trajectory(
-        f"trajectories/{seed}/bfgs-{n}-{amp}-{surface.n}-{start_temp}-{cooling_rate}-{end_temp}.traj",
-        "w",
-        atoms,
-    )
+        # potential_energy = atoms.get_potential_energy()
+        # print("Potential energy:", potential_energy, "eV")
+        return atoms
 
-    def wrap_and_write_bfgs():
-        # atoms.wrap()
-        traj_bfgs.write(atoms)
+    def anneal(
+        self,
+        atoms: Atoms,
+        start_temp: int,
+        end_temp: int,
+        cooling_rate: int,
+        fmax: float = 0.5,
+        traj_path_md: Optional[str] = None,
+        traj_path_bfgs: Optional[str] = None,
+    ):
+        """
+        Perform simulated annealing with Langevin molecular dynamics on an ASE Atoms object.
+        The atoms should have a calculator object attached.
+        After the final simulation round, a local minimisation is carried out with BFGS.
 
-    local_minimisation.attach(wrap_and_write_bfgs)
-    local_minimisation.run(steps=10000, fmax=fmax)
+        Parameters:
 
-    optimised_energy = atoms.get_potential_energy()
-    print(f"Optimised energy: {optimised_energy}")
+        atoms: ASE Atoms object
+            Atoms to anneal
+        start_temp: int
+            Starting temperature (C) of first simulation
+        end_temp: int
+            Starting temperature (C) of final simulation
+        cooling_rate: int
+            Temperature decrease (C) between each round of annealing
+        fmax: float
+            Convergence criterion for BFGS minimisation - maximum force per atom. Default 0.5
+        traj_path_md: str
+            Path to save .traj file of molecular dynamics
+        traj_path_bfgs: str
+            Path to save .traj file of BFGS minimisation
 
-    return optimised_energy
+        """
+        dyn = Langevin(
+            atoms,
+            timestep=2 * units.fs,
+            temperature_K=10,
+            friction=0.001 / units.fs,
+        )
+        if traj_path_md is not None:
+            dyn.attach(Trajectory(traj_path_md, mode="w", atoms=atoms), interval=500)
+
+        iters = round((start_temp - end_temp) / cooling_rate)
+        for i in range(iters):
+            MaxwellBoltzmannDistribution(
+                atoms, temperature_K=(start_temp - cooling_rate * i)
+            )
+            atoms.wrap()
+            dyn.run(10000)
+        MaxwellBoltzmannDistribution(atoms, temperature_K=end_temp)
+        dyn.run(15000)
+
+        local_minimisation = BFGS(
+            atoms,
+            trajectory=(
+                Trajectory(traj_path_bfgs, mode="w", atoms=atoms)
+                if traj_path_bfgs is not None
+                else None
+            ),
+        )
+        local_minimisation.run(steps=10000, fmax=fmax)
+        optimised_energy = atoms.get_potential_energy()
+        # print("Optimised energy:", potential_energy, "eV")
+        return optimised_energy
