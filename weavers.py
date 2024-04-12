@@ -138,6 +138,54 @@ def straighten_and_plot_weavers_periodic(kagome_atoms, neighbour_dict):
     ax2.set_ylabel("Y coordinate")
 
 
+def straighten_and_plot_weavers_torus(kagome_atoms, neighbour_dict):
+    fig = plt.figure(figsize=(7, 4))
+    positions = kagome_atoms.get_positions()
+    print(positions.shape)
+    # Kagome structure plot on the left (subplot 1)
+    ax1 = fig.add_subplot(121, projection="3d")
+    for pos in positions:
+        ax1.scatter(*pos, color="blue", s=5)
+    for atom_idx, neighbour_pairs in neighbour_dict.items():
+        atom_pos = positions[atom_idx]
+        for neighbours in neighbour_pairs:
+            for neighbour in neighbours:
+                neighbour_pos = positions[neighbour]
+                ax1.plot(
+                    [atom_pos[0], neighbour_pos[0]],
+                    [atom_pos[1], neighbour_pos[1]],
+                    [atom_pos[2], neighbour_pos[2]],
+                    color="red",
+                )
+    ax1.set_xlabel("X axis")
+    ax1.set_ylabel("Y axis")
+    ax1.set_zlabel("Z axis")
+    ax1.set_title("Kagome Structure Connections")
+
+    local_minimisation = BFGS(kagome_atoms)
+    local_minimisation.run(steps=50)
+
+    # Another subplot (subplot 2)
+    ax2 = fig.add_subplot(122, projection="3d")
+    for pos in positions:
+        ax2.scatter(*pos, color="blue", s=5)
+    for atom_idx, neighbour_pairs in neighbour_dict.items():
+        atom_pos = positions[atom_idx]
+        for neighbours in neighbour_pairs:
+            for neighbour in neighbours:
+                neighbour_pos = positions[neighbour]
+                ax2.plot(
+                    [atom_pos[0], neighbour_pos[0]],
+                    [atom_pos[1], neighbour_pos[1]],
+                    [atom_pos[2], neighbour_pos[2]],
+                    color="red",
+                )
+    ax2.set_xlabel("X axis")
+    ax2.set_ylabel("Y axis")
+    ax2.set_zlabel("Z axis")
+    ax2.set_title("Kagome Structure Connections")
+
+
 # Your code to call the function goes here
 
 

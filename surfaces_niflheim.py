@@ -7,13 +7,18 @@ from multiprocessing import Pool
 
 from ase.parallel import paropen
 
-from annealing import setup_periodic_atoms, anneal
-from delaunay import make_delaunay_triangulation, get_neighbour_counts, plot_delaunay, repeat
+from annealing import setup_atoms, anneal
+from delaunay import (
+    make_delaunay_triangulation,
+    get_neighbour_counts,
+    plot_delaunay,
+    repeat,
+)
 from surface import PeriodicSurface, SurfaceConstraint
 
 
-n_streams = 10
-n_processes = 56
+n_streams = 1
+n_processes = 1
 seed = 10020
 ss = SeedSequence(seed)
 child_seeds = ss.spawn(n_streams)
@@ -74,7 +79,7 @@ def launch_parallel(nstream, surface, start_temp, cooling_rate, end_temp):
     n, stream = nstream
     amp, surf = surface
     r0 = 32 / surf.density  # in flat cell found optimal to be density 1/9 and r0=4
-    atoms = setup_periodic_atoms(stream, surf, r0=r0)
+    atoms = setup_atoms(stream, surf, r0=r0)
     energy = anneal(seed, n, amp, surf, atoms, start_temp, cooling_rate, end_temp)
     coords = atoms.get_positions()
     points = repeat(3, coords)

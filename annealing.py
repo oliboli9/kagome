@@ -30,6 +30,8 @@ class AnnealingSimulator:
         )
         atoms.calc = self.calculator
         constraint = SurfaceConstraint(self.surface)
+        surface_positions = self.surface.elevate_to_surface(atoms.get_positions())
+        atoms.set_positions(surface_positions)
         atoms.set_constraint(constraint)
 
         # potential_energy = atoms.get_potential_energy()
@@ -56,11 +58,11 @@ class AnnealingSimulator:
         atoms: ASE Atoms object
             Atoms to anneal
         start_temp: int
-            Starting temperature (C) of first simulation
+            Starting temperature (K) of first simulation
         end_temp: int
-            Starting temperature (C) of final simulation
+            Starting temperature (K) of final simulation
         cooling_rate: int
-            Temperature decrease (C) between each round of annealing
+            Temperature decrease (K) between each round of annealing
         fmax: float
             Convergence criterion for BFGS minimisation - maximum force per atom. Default 0.5
         traj_path_md: str
@@ -80,13 +82,13 @@ class AnnealingSimulator:
 
         iters = round((start_temp - end_temp) / cooling_rate)
         for i in range(iters):
-            MaxwellBoltzmannDistribution(
-                atoms, temperature_K=(start_temp - cooling_rate * i)
-            )
+            temperature_K = start_temp - cooling_rate * i
+            print(f"Setting temp: {temperature_K}")
+            MaxwellBoltzmannDistribution(atoms, temperature_K=temperature_K)
             atoms.wrap()
-            dyn.run(10000)
+            dyn.run(1000)
         MaxwellBoltzmannDistribution(atoms, temperature_K=end_temp)
-        dyn.run(15000)
+        dyn.run(1500)
 
         local_minimisation = BFGS(
             atoms,
