@@ -9,9 +9,10 @@ from annealing import AnnealingSimulator
 from calculator import RadialPotential
 from kagome import Kagome
 from surface import TorusSurface
+from triangulation import NonConvexTriangulation
 
-surface = TorusSurface(5, 2, (15, 15, 15), 100)
-calculator = RadialPotential(r0=2)
+surface = TorusSurface(5, 2, (15, 15, 15), 50)
+calculator = RadialPotential(r0=4)
 
 n_streams = 1
 n_processes = 1
@@ -23,20 +24,21 @@ streams = [default_rng(s) for s in child_seeds]
 #### Annealing
 # annealing = AnnealingSimulator(surface, calculator)
 # atoms = annealing.setup_atoms(streams[0])
-# view(atoms)
+# # view(atoms)
 # # annealing.anneal(atoms, 2000, 100, 500, traj_path_bfgs="torus.traj")
 # local_minimisation = BFGS(atoms, trajectory="polar2.traj")
 
-# local_minimisation.run(
-#     steps=100,
-# )
+# local_minimisation.run(steps=100, fmax=0.01)
 
 # coords = atoms.get_positions()
-# np.savetxt("torus_points2.csv", coords, delimiter=",", fmt="%f")
+# np.savetxt("torus_points.csv", coords, delimiter=",", fmt="%f")
 
 #### Triangulation - matlab
-simplices = np.loadtxt("simplices2.csv", delimiter=",", dtype="int") - 1
-coords = np.loadtxt("alphapoints2.csv", delimiter=",", dtype="float")
+# simplices = np.loadtxt("simplices2.csv", delimiter=",", dtype="int") - 1
+# coords = np.loadtxt("alphapoints2.csv", delimiter=",", dtype="float")
+coords = np.loadtxt("torus_points.csv", delimiter=",", dtype="float")
+triangulation = NonConvexTriangulation()
+simplices = triangulation.triangulate(coords, 0.3)
 
 #### Kagome
 kagome = Kagome(simplices, coords)

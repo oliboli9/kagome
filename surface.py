@@ -152,44 +152,6 @@ class TorusSurface:
 
         return np.array([closest_point(x, y, z) for x, y, z in positions])
 
-    def distance_to_torus(self, point):
-        """
-        Calculate the distance from a point (x, y, z) to the surface of a torus centered at (cx, cy, cz).
-
-        :param (x, y, z): Coordinates of a point in 3D space.
-        :param center: Coordinates of the center of the torus (cx, cy, cz).
-        :return: Distance from the point to the torus surface.
-        """
-        x, y, z = np.array(point) - np.array(self.centre)
-        dist = (self.R - np.sqrt(x**2 + y**2)) ** 2 + z**2 - self.r**2
-        return dist
-
-    def generate_torus_level_set(self, grid_size, bounds):
-        """
-        Generate a 3D level set of a torus.
-
-        :param grid_size: The number of points along each dimension in the grid.
-        :param bounds: The bounds of the grid in the format (xmin, xmax, ymin, ymax, zmin, zmax).
-        :param R: Major radius of the torus.
-        :param r: Minor radius of the torus.
-        :return: 3D numpy array representing the level set.
-        """
-        xmin, xmax, ymin, ymax, zmin, zmax = bounds
-        x = np.linspace(xmin, xmax, grid_size)
-        y = np.linspace(ymin, ymax, grid_size)
-        z = np.linspace(zmin, zmax, grid_size)
-
-        level_set = np.empty((grid_size, grid_size, grid_size))
-
-        for i in range(grid_size):
-            for j in range(grid_size):
-                for k in range(grid_size):
-                    level_set[i, j, k] = self.distance_to_torus(
-                        [x[i], y[j], z[k]],
-                    )
-
-        return level_set
-
 
 class SurfaceConstraint:
     def __init__(self, surface):

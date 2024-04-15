@@ -3,6 +3,7 @@ from skimage import measure
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 import numpy as np
+import alphashape
 
 
 class Triangulation:
@@ -46,7 +47,11 @@ class NonConvexTriangulation(Triangulation):
     Import simplices and points as triangles.csv and alphapoints.csv respectively
     """
 
-    def triangulate(self, points=None):
-        simplices = np.loadtxt("simplices.csv", delimiter=",", dtype="int") - 1
-        coords = np.loadtxt("alphapoints.csv", delimiter=",", dtype="float")
-        return coords, simplices
+    def triangulate(self, points, alpha):
+        # simplices = np.loadtxt("simplices.csv", delimiter=",", dtype="int") - 1
+        # coords = np.loadtxt("alphapoints.csv", delimiter=",", dtype="float")
+        points = [tuple(row) for row in points]
+        alpha_shape = alphashape.alphashape(points, alpha)
+        # alpha_shape.show()
+        simplices = alpha_shape.faces
+        return simplices
