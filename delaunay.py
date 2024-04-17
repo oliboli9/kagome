@@ -26,12 +26,25 @@ def repeat(n, points):
     return repeated_points
 
 
-def find_neighbors(tri, points_2d):
+def find_neighbors(simplices, points_2d):
     neighbors = [[] for _ in range(len(points_2d))]
-    for simplex in tri.simplices:
+    for simplex in simplices:
         for i, j in zip(simplex, simplex[[1, 2, 0]]):
             neighbors[i].append(j)
             neighbors[j].append(i)
+    return [list(set(nbr)) for nbr in neighbors]
+
+
+def find_neighbours_3d(simplices, points_3d):
+    neighbors = [[] for _ in range(len(points_3d))]
+    for simplex in simplices:
+        for i in range(4):
+            for j in range(i + 1, 4):
+                point_i = simplex[i]
+                point_j = simplex[j]
+
+                neighbors[point_i].append(point_j)
+                neighbors[point_j].append(point_i)
     return [list(set(nbr)) for nbr in neighbors]
 
 
@@ -191,4 +204,10 @@ def get_neighbour_counts(points, neighbours):
 
     # Now filtered_count_frequency is a dictionary where keys are the number of neighbors,
     # and values are the frequencies of these neighbor counts for filtered points
-    return (filtered_count_frequency)
+    return filtered_count_frequency
+
+
+def get_neighbour_counts_3d(neighbours):
+    neighbour_counts = [len(n) for n in neighbours]
+    filtered_count_frequency = Counter(neighbour_counts)
+    return filtered_count_frequency

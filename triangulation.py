@@ -1,4 +1,4 @@
-from scipy.spatial import Delaunay
+from scipy.spatial import Delaunay, ConvexHull
 from skimage import measure
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
@@ -36,6 +36,12 @@ class SurfaceTriangulation(Triangulation):
         points_2d = points[:, :2]
         tri = Delaunay(points_2d)
         return tri.simplices
+
+
+class ConvexTriangulation(Triangulation):
+    def triangulate(self, points):
+        hull = ConvexHull(points)
+        return hull.simplices
 
 
 class NonConvexTriangulation(Triangulation):

@@ -94,10 +94,11 @@ class KagomeRadialPotential(Calculator):
 
     implemented_properties = ["energy", "forces"]
     default_parameters = {
-        "V0": 1.0,
+        # "V0": 1.0,
+        "V0": 2.0,
         "r0": 1,
-        "K0": 10000.0,
-    }  # this config makes the radial and kagome force have the same order of magnitude
+        "K0": 1.0,
+    }  # this config makes the radial and kagome force have the same order of magnitude "K0": 10000.0,
 
     nolabel = True
 
@@ -159,6 +160,7 @@ class KagomeRadialPotential(Calculator):
         # forces = np.zeros((len(atoms), 3))
         # energy = 0
         # print(f"radial force:{forces[0]}")
+        # print(f"radial energy:{energy}")
 
         for atom_index, neighbours in neighbour_dict.items():
             n1, n2 = neighbours[0]
@@ -175,7 +177,8 @@ class KagomeRadialPotential(Calculator):
                 vec2_normalized = vec2 / norm_vec2
 
                 dot_product = np.dot(vec1_normalized, vec2_normalized)
-                energy_contribution = V0 * (1 - dot_product)
+                energy_contribution = K0 * (1 - dot_product)
+                # print(f"kagome energy {energy_contribution}")
                 energy += energy_contribution
 
                 # Calculate force contributions

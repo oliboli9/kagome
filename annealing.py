@@ -26,7 +26,7 @@ class AnnealingSimulator:
             "Au" * self.surface.n,
             positions=cartesian_positions,
             cell=cell,
-            pbc=(1, 1, 0),
+            pbc=(0, 0, 0),
         )
         atoms.calc = self.calculator
         constraint = SurfaceConstraint(self.surface)
@@ -44,7 +44,7 @@ class AnnealingSimulator:
         start_temp: int,
         end_temp: int,
         cooling_rate: int,
-        fmax: float = 0.5,
+        fmax: float = 0.05,
         traj_path_md: Optional[str] = None,
         traj_path_bfgs: Optional[str] = None,
     ):
@@ -71,24 +71,24 @@ class AnnealingSimulator:
             Path to save .traj file of BFGS minimisation
 
         """
-        dyn = Langevin(
-            atoms,
-            timestep=2 * units.fs,
-            temperature_K=10,
-            friction=0.001 / units.fs,
-        )
-        if traj_path_md is not None:
-            dyn.attach(Trajectory(traj_path_md, mode="w", atoms=atoms), interval=500)
+        MaxwellBoltzmannDistribution(atoms, temperature_K=start_temp)
 
         iters = round((start_temp - end_temp) / cooling_rate)
-        for i in range(iters):
+        for i in range(1, iters + 1):
             temperature_K = start_temp - cooling_rate * i
-            print(f"Setting temp: {temperature_K}")
-            MaxwellBoltzmannDistribution(atoms, temperature_K=temperature_K)
+            dyn = Langevin(
+                atoms,
+                timestep=2 * units.fs,
+                temperature_K=temperature_K,
+                friction=0.01 / units.fs,
+            )
+            if traj_path_md is not None:
+                dyn.attach(
+                    Trajectory(traj_path_md, mode="a", atoms=atoms), interval=100
+                )
+            print(f"Heat bath temp: {temperature_K}")
             atoms.wrap()
-            dyn.run(1000)
-        MaxwellBoltzmannDistribution(atoms, temperature_K=end_temp)
-        dyn.run(1500)
+            dyn.run(2000)
 
         local_minimisation = BFGS(
             atoms,
@@ -98,7 +98,7 @@ class AnnealingSimulator:
                 else None
             ),
         )
-        local_minimisation.run(steps=10000, fmax=fmax)
+        local_minimisation.run(steps=100, fmax=fmax)
         optimised_energy = atoms.get_potential_energy()
         # print("Optimised energy:", potential_energy, "eV")
         return optimised_energy

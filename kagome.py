@@ -2,8 +2,10 @@ from ase.atoms import Atoms
 from ase.cell import Cell
 from ase.optimize import BFGS
 
-from calculator import KagomePotential, KagomeRadialPotential
+from calculator import KagomePotential, KagomeRadialPotential, RadialPotential
 from surface import SurfaceConstraint
+
+import numpy as np
 
 
 def calculate_midpoint(point1, point2):
@@ -11,10 +13,12 @@ def calculate_midpoint(point1, point2):
 
 
 class Kagome:
-    def __init__(self, simplices, points, surface=None):
+    def __init__(self, simplices, points, r0, surface=None, periodic=False):
         self.simplices = simplices
         self.points = points
+        self.r0 = r0
         self.surface = surface
+        self.periodic = periodic
         self.neighbour_coordinate_dict = self.kagome_coordinate_dict()
         self.kagome_positions, self.neighbour_indices_dict = self.kagome_indices_dict()
         self.atoms = self.kagome_atoms()
@@ -82,7 +86,73 @@ class Kagome:
             neighbour_keys, list(self.neighbour_coordinate_dict.keys())
         ):
             sorted_positions[new_index] = item
-        return sorted_positions, sorted_neighbour_dict
+        if not self.periodic:
+            return sorted_positions, sorted_neighbour_dict
+        else:
+            square_start = 30
+            square_end = 60
+
+            def adjust_periodic(coord, square_start, square_end):
+                square_size = square_end - square_start
+                if coord < square_start:
+                    return coord + square_size
+                elif coord > square_end:
+                    return coord - square_size
+                else:
+                    return coord
+
+            # Create a mapping from original indices to new indices in the specified range
+            index_mapping = {
+                old_idx: new_idx
+                for new_idx, old_idx in enumerate(
+                    atom_idx
+                    for atom_idx, atom_pos in enumerate(sorted_positions)
+                    if square_start <= atom_pos[0] <= square_end
+                    and square_start <= atom_pos[1] <= square_end
+                )
+            }
+
+            # Adjust neighbors and filter positions
+            adjusted_neighbour_dict = {}
+            for old_idx, neighbor_pairs in sorted_neighbour_dict.items():
+                if old_idx in index_mapping:
+                    new_neighbors = []
+                    for neighbor_pair in neighbor_pairs:
+                        new_pair = []
+                        for neighbor_idx in neighbor_pair:
+                            neighbor_pos = sorted_positions[neighbor_idx]
+                            # Apply periodic boundary adjustments
+                            adjusted_x = adjust_periodic(
+                                neighbor_pos[0], square_start, square_end
+                            )
+                            adjusted_y = adjust_periodic(
+                                neighbor_pos[1], square_start, square_end
+                            )
+                            # Find the corresponding new index
+                            for idx, pos in enumerate(sorted_positions):
+                                if (
+                                    square_start <= pos[0] <= square_end
+                                    and square_start <= pos[1] <= square_end
+                                    and np.allclose(
+                                        [adjusted_x, adjusted_y],
+                                        [pos[0], pos[1]],
+                                        atol=1e-5,
+                                    )
+                                ):
+                                    new_pair.append(index_mapping[idx])
+                                    break
+                        if len(new_pair) == 2:
+                            new_neighbors.append(tuple(new_pair))
+                    adjusted_neighbour_dict[index_mapping[old_idx]] = new_neighbors
+
+            # Shift the positions in the specified range
+            shifted_positions = [
+                (pos[0] - square_start, pos[1] - square_start, pos[2])
+                for idx, pos in enumerate(sorted_positions)
+                if idx in index_mapping
+            ]
+
+            return shifted_positions, adjusted_neighbour_dict
 
     def kagome_atoms(self):
         cell = Cell.fromcellpar([30, 30, 30, 90, 90, 90])
@@ -92,8 +162,11 @@ class Kagome:
             cell=cell,
             pbc=(1, 1, 0),
         )
-        # kagome_atoms.calc = KagomeRadialPotential(r0=2, neighbour_dict=neighbour_dict)
-        kagome_atoms.calc = KagomePotential(neighbour_dict=self.neighbour_indices_dict)
+        # kagome_atoms.calc = KagomePotential(neighbour_dict=self.neighbour_indices_dict)
+        kagome_atoms.calc = KagomeRadialPotential(
+            r0=self.r0, neighbour_dict=self.neighbour_indices_dict
+        )
+        # kagome_atoms.calc = RadialPotential(r0=self.r0)
         if self.surface is not None:
             constraint = SurfaceConstraint(self.surface)
             kagome_atoms.set_constraint(constraint)
@@ -101,7 +174,7 @@ class Kagome:
 
     def straighten_weavers(self):
         local_minimisation = BFGS(self.atoms)
-        local_minimisation.run(steps=50)
+        local_minimisation.run(steps=30)
 
     def plot_weavers(self, ax):
         positions = self.atoms.get_positions()
@@ -123,19 +196,51 @@ class Kagome:
         ax.set_zlabel("Z axis")
         ax.set_title("Kagome Structure Connections")
 
+    def plot_weavers_top_half(self, ax):
+        positions = self.atoms.get_positions()
+        center_z = 15  # Assuming the sphere is centered at (15, 15, 15)
+
+        # Plotting only atoms that are in the top half of the sphere
+        for pos in positions:
+            if pos[2] > center_z:  # Check if z-coordinate is in the top half
+                ax.scatter(*pos, color="blue", s=5)
+
+        # Plotting connections only if both atoms are in the top half
+        for atom_idx, neighbour_pairs in self.neighbour_indices_dict.items():
+            atom_pos = positions[atom_idx]
+            if atom_pos[2] > center_z:  # Check if the atom itself is in the top half
+                for neighbours in neighbour_pairs:
+                    for neighbour in neighbours:
+                        neighbour_pos = positions[neighbour]
+                        if (
+                            neighbour_pos[2] > center_z
+                        ):  # Check if the neighbour is also in the top half
+                            ax.plot(
+                                [atom_pos[0], neighbour_pos[0]],
+                                [atom_pos[1], neighbour_pos[1]],
+                                [atom_pos[2], neighbour_pos[2]],
+                                color="red",
+                            )
+
+        ax.set_xlabel("X axis")
+        ax.set_ylabel("Y axis")
+        ax.set_zlabel("Z axis")
+        ax.set_title("Kagome Structure Connections - Top Half")
+
     def plot_weavers_periodic(self, ax):
         positions = self.atoms.get_positions()
 
         def is_periodic_neighbor(pos1, pos2):
             return abs(pos1[0] - pos2[0]) > 15 or abs(pos1[1] - pos2[1]) > 15
 
-        for point, neighbour_pairs in self.neighbour_dict.items():
+        for point, neighbour_pairs in self.neighbour_indices_dict.items():
             for neighbours in neighbour_pairs:
                 for neighbour in neighbours:
                     if not is_periodic_neighbor(positions[point], positions[neighbour]):
                         ax.plot(
                             [positions[point][0], positions[neighbour][0]],
                             [positions[point][1], positions[neighbour][1]],
+                            [positions[point][2], positions[neighbour][2]],
                             "b-",
                             linewidth=0.5,
                         )
@@ -143,3 +248,4 @@ class Kagome:
         ax.set_title("Weavers")
         ax.set_xlabel("X coordinate")
         ax.set_ylabel("Y coordinate")
+        ax.set_zlabel("Z coordinate")

@@ -6,10 +6,7 @@ from ase.optimize import BFGS
 
 from itertools import islice
 import matplotlib.pyplot as plt
-from kagome import (
-    find_triangle_midpoints,
-    create_indices_dict,
-)
+
 from calculator import RadialPotential, KagomePotential, KagomeRadialPotential
 from delaunay import repeat, make_delaunay_triangulation
 
@@ -97,7 +94,10 @@ def straighten_and_plot_weavers(kagome_atoms, neighbour_dict):
 
 
 def straighten_and_plot_weavers_periodic(kagome_atoms, neighbour_dict):
-    fig, (ax1, ax2) = plt.subplots(1, 2)
+    # fig, (ax1, ax2) = plt.subplots(1, 2)
+    fig = plt.figure(figsize=(12, 6))
+    ax1 = fig.add_subplot(121, projection="3d")
+    ax2 = fig.add_subplot(122, projection="3d")
     positions = kagome_atoms.get_positions()
 
     def is_periodic_neighbor(pos1, pos2):
@@ -110,6 +110,7 @@ def straighten_and_plot_weavers_periodic(kagome_atoms, neighbour_dict):
                     ax1.plot(
                         [positions[point][0], positions[neighbour][0]],
                         [positions[point][1], positions[neighbour][1]],
+                        [positions[point][2], positions[neighbour][2]],
                         "b-",
                         linewidth=0.5,
                     )
@@ -117,6 +118,7 @@ def straighten_and_plot_weavers_periodic(kagome_atoms, neighbour_dict):
     ax1.set_title("Weavers")
     ax1.set_xlabel("X coordinate")
     ax1.set_ylabel("Y coordinate")
+    ax1.set_zlabel("Z coordinate")
 
     local_minimisation = BFGS(kagome_atoms)
     local_minimisation.run(steps=20)
@@ -129,6 +131,7 @@ def straighten_and_plot_weavers_periodic(kagome_atoms, neighbour_dict):
                     ax2.plot(
                         [positions[point][0], positions[neighbour][0]],
                         [positions[point][1], positions[neighbour][1]],
+                        [positions[point][2], positions[neighbour][2]],
                         "b-",
                         linewidth=0.5,
                     )

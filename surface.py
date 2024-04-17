@@ -71,7 +71,11 @@ class PeriodicSurface:
 
         dz_dx = self.dx(x, y)
         dz_dy = self.dy(x, y)
-        dz_dz = -1 * np.ones(self.n)
+        dz_dz = -1 * np.ones(len(dz_dx))
+
+        # print(f"x:{len(dz_dx)}")
+        # print(f"y:{len(dz_dy)}")
+        # print(f"z:{len(dz_dz)}")
 
         normals = np.stack((dz_dx, dz_dy, dz_dz), axis=-1)
         return normals
@@ -87,20 +91,72 @@ class PeriodicSurface:
         return df_dy_num(x_vals, y_vals)
 
 
-class TorusSurface:
-    def __init__(self, R, r, centre, n):
-        self.R = R  # Major radius
-        self.r = r  # Minor radius
+class SphereSurface:
+    def __init__(self, r, centre, density=None, n=None):
         self.n = n
-        theta, phi, R, r = sp.symbols("theta phi R r")
+        self.r = r
         self.centre = np.array(centre)
+        theta, phi = sp.symbols("theta phi")
         cx, cy, cz = centre
         self.f = (
-            (self.R + self.r * sp.cos(phi)) * sp.cos(theta) + cx,
-            (self.R + self.r * sp.cos(phi)) * sp.sin(theta) + cy,
-            (self.r * sp.sin(phi)) + cz,
+            (self.r * sp.cos(theta) * sp.sin(phi)) + cx,
+            (self.r * sp.sin(theta) * sp.sin(phi)) + cy,
+            (self.r * sp.cos(phi)) + cz,
         )
         self.f_num = sp.lambdify((theta, phi), self.f, "numpy")
+
+        surface_area = 4 * np.pi * r**2
+
+        if density is not None:
+            self.n = int(surface_area * density)
+        elif n is not None:
+            self.n = n
+            self.density = surface_area / n
+        else:
+            raise ValueError("Either density or number of atoms must be provided")
+
+    def normals(self, positions):
+        vectors = positions - self.centre
+        normals = vectors / np.linalg.norm(vectors, axis=1)[:, np.newaxis]
+        return normals
+
+    def elevate_to_surface(self, positions):
+        def closest_point(point):
+            point = np.array(point)
+            vector = point - self.centre
+            # Normalize the vector
+            unit_vector = vector / np.linalg.norm(vector)
+            # Scale by the sphere's radius and adjust by the sphere's center
+            closest_point_on_sphere = self.centre + unit_vector * self.r
+            return closest_point_on_sphere
+
+        return np.array([closest_point(pos) for pos in positions])
+
+
+class TorusSurface:
+    def __init__(self, R, r, centre, density=None, n=None):
+        self.R = R  # Major radius
+        self.r = r  # Minor radius
+        self.centre = np.array(centre)
+        theta, phi = sp.symbols("theta phi")
+        cx, cy, cz = centre
+        self.f = (
+            (self.R + self.r * sp.cos(theta)) * sp.cos(phi) + cx,
+            (self.R + self.r * sp.cos(theta)) * sp.sin(phi) + cy,
+            (self.r * sp.sin(theta)) + cz,
+        )
+        self.f_num = sp.lambdify((theta, phi), self.f, "numpy")
+
+        # Surface area of torus S = 4*pi^2*R*r
+        surface_area = 4 * np.pi**2 * R * r
+
+        if density is not None:
+            self.n = int(surface_area * density)
+        elif n is not None:
+            self.n = n
+            self.density = surface_area / n
+        else:
+            raise ValueError("Either density or number of atoms must be provided")
 
     def normals(self, positions):
         rho_vals, theta_vals, phi_vals = cartesian_to_spherical(
