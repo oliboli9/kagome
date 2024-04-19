@@ -1,0 +1,60 @@
+/home/niflheim/s215142/.bashrc: line 11: thesis-venv/bin/activate: No such file or directory
+multiprocessing.pool.RemoteTraceback: 
+"""
+Traceback (most recent call last):
+  File "/home/modules/software/Python/3.11.3-GCCcore-12.3.0/lib/python3.11/multiprocessing/pool.py", line 125, in worker
+    result = (True, func(*args, **kwds))
+                    ^^^^^^^^^^^^^^^^^^^
+  File "/home/modules/software/Python/3.11.3-GCCcore-12.3.0/lib/python3.11/multiprocessing/pool.py", line 51, in starmapstar
+    return list(itertools.starmap(args[0], args[1]))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/niflheim/s215142/kagome/pipeline_parallel.py", line 58, in launch_parallel
+    simplices = triangulation.triangulate(coords, 0.3) #1/r0 + a little bit (0.05?)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/niflheim/s215142/kagome/triangulation.py", line 60, in triangulate
+    alpha_shape = alphashape.alphashape(points, alpha)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/niflheim/s215142/thesis-venv/lib/python3.11/site-packages/alphashape/alphashape.py", line 176, in alphashape
+    trimesh.repair.fix_normals(result)
+  File "/home/niflheim/s215142/thesis-venv/lib/python3.11/site-packages/trimesh/repair.py", line 165, in fix_normals
+    fix_winding(mesh)
+  File "/home/niflheim/s215142/thesis-venv/lib/python3.11/site-packages/trimesh/repair.py", line 44, in fix_winding
+    if mesh.is_winding_consistent:
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/niflheim/s215142/thesis-venv/lib/python3.11/site-packages/trimesh/caching.py", line 139, in get_cached
+    value = function(*args, **kwargs)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/niflheim/s215142/thesis-venv/lib/python3.11/site-packages/trimesh/base.py", line 1575, in is_winding_consistent
+    _ = self.is_watertight
+        ^^^^^^^^^^^^^^^^^^
+  File "/home/niflheim/s215142/thesis-venv/lib/python3.11/site-packages/trimesh/caching.py", line 139, in get_cached
+    value = function(*args, **kwargs)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/niflheim/s215142/thesis-venv/lib/python3.11/site-packages/trimesh/base.py", line 1592, in is_watertight
+    edges=self.edges, edges_sorted=self.edges_sorted
+          ^^^^^^^^^^
+  File "/home/niflheim/s215142/thesis-venv/lib/python3.11/site-packages/trimesh/caching.py", line 139, in get_cached
+    value = function(*args, **kwargs)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/niflheim/s215142/thesis-venv/lib/python3.11/site-packages/trimesh/base.py", line 894, in edges
+    edges, index = geometry.faces_to_edges(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/niflheim/s215142/thesis-venv/lib/python3.11/site-packages/trimesh/geometry.py", line 109, in faces_to_edges
+    edges = faces[:, [0, 1, 1, 2, 2, 0]].reshape((-1, 2))
+            ~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+IndexError: too many indices for array: array is 1-dimensional, but 2 were indexed
+"""
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/niflheim/s215142/kagome/pipeline_parallel.py", line 95, in <module>
+    pool_handler()
+  File "/home/niflheim/s215142/kagome/pipeline_parallel.py", line 91, in pool_handler
+    p.starmap(launch_parallel, args)
+  File "/home/modules/software/Python/3.11.3-GCCcore-12.3.0/lib/python3.11/multiprocessing/pool.py", line 375, in starmap
+    return self._map_async(func, iterable, starmapstar, chunksize).get()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/modules/software/Python/3.11.3-GCCcore-12.3.0/lib/python3.11/multiprocessing/pool.py", line 774, in get
+    raise self._value
+IndexError: too many indices for array: array is 1-dimensional, but 2 were indexed

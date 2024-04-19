@@ -15,8 +15,8 @@ from surface import TorusSurface
 from triangulation import NonConvexTriangulation
 
 
-n_streams = 4
-n_processes = 4
+n_streams = 5
+n_processes = 56
 seed = 99999
 ss = SeedSequence(seed)
 child_seeds = ss.spawn(n_streams)
@@ -35,8 +35,6 @@ args = [
 
 if not os.path.exists(f"torus/trajectories/{seed}"):
     os.makedirs(f"torus/trajectories/{seed}")
-if not os.path.exists(f"torus/results/{seed}"):
-    os.makedirs(f"torus/results/{seed}")
 if not os.path.exists(f"torus/weave_patterns/{seed}"):
     os.makedirs(f"torus/weave_patterns/{seed}")
 
@@ -57,7 +55,7 @@ def launch_parallel(nstream, no_atoms):
     energy = annealing.anneal(atoms, 2500, 100, 500, traj_path_md=f"{traj_filename}")
     coords = atoms.get_positions()
     triangulation = NonConvexTriangulation()
-    simplices = triangulation.triangulate(coords, 0.3)
+    simplices = triangulation.triangulate(coords, 0.3) #1/r0 + a little bit (0.05?)
     neighbours = find_neighbours_3d(simplices, coords)
     neighbour_counts = get_neighbour_counts_3d(neighbours)
     with paropen(results_filename, "a") as resfile:

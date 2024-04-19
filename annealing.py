@@ -88,7 +88,7 @@ class AnnealingSimulator:
                 )
             print(f"Heat bath temp: {temperature_K}")
             atoms.wrap()
-            dyn.run(2000)
+            dyn.run(1000)
 
         local_minimisation = BFGS(
             atoms,
