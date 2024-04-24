@@ -53,11 +53,11 @@ class NonConvexTriangulation(Triangulation):
     Import simplices and points as triangles.csv and alphapoints.csv respectively
     """
 
-    def triangulate(self, points, alpha):
+    def triangulate(self, points, alpha=None):
         # simplices = np.loadtxt("simplices.csv", delimiter=",", dtype="int") - 1
         # coords = np.loadtxt("alphapoints.csv", delimiter=",", dtype="float")
         points = [tuple(row) for row in points]
         alpha_shape = alphashape.alphashape(points, alpha)
-        # alpha_shape.show()
+        alpha_shape.show()
         simplices = alpha_shape.faces
         return simplices

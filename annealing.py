@@ -3,11 +3,12 @@ from typing import Optional
 
 from ase import Atoms, units
 from ase.cell import Cell
-from ase.io.trajectory import Trajectory
+from ase.io.trajectory import Trajectory, TrajectoryWriter
 from ase.md.langevin import Langevin
 from ase.md.velocitydistribution import MaxwellBoltzmannDistribution
 from ase.md.verlet import VelocityVerlet
 from ase.optimize import BFGS
+from ase.visualize import view
 
 from calculator import Calculator
 from surface import Surface, SurfaceConstraint
@@ -26,7 +27,7 @@ class AnnealingSimulator:
             "Au" * self.surface.n,
             positions=cartesian_positions,
             cell=cell,
-            pbc=(0, 0, 0),
+            pbc=(1, 1, 0),
         )
         atoms.calc = self.calculator
         constraint = SurfaceConstraint(self.surface)
@@ -83,12 +84,20 @@ class AnnealingSimulator:
                 friction=0.01 / units.fs,
             )
             if traj_path_md is not None:
+                # def wrap_and_write():
+                #     atoms.wrap()
+                #     t = TrajectoryWriter(traj_path_md, mode="a")
+                #     t.write(atoms)
                 dyn.attach(
                     Trajectory(traj_path_md, mode="a", atoms=atoms), interval=100
                 )
+                # dyn.attach(wrap_and_write, interval=100)
             print(f"Heat bath temp: {temperature_K}")
             atoms.wrap()
-            dyn.run(1000)
+            for i in range(100):
+                dyn.run(50)
+                atoms.wrap()
+            # dyn.run(5000)
 
         local_minimisation = BFGS(
             atoms,
@@ -98,7 +107,72 @@ class AnnealingSimulator:
                 else None
             ),
         )
-        local_minimisation.run(steps=100, fmax=fmax)
+        local_minimisation.run(steps=1000, fmax=fmax)
         optimised_energy = atoms.get_potential_energy()
         # print("Optimised energy:", potential_energy, "eV")
         return optimised_energy
+
+    # def anneal(
+    #     self,
+    #     atoms: Atoms,
+    #     start_temp: int,
+    #     end_temp: int,
+    #     cooling_rate: int,
+    #     fmax: float = 0.05,
+    #     traj_path_md: Optional[str] = None,
+    #     traj_path_bfgs: Optional[str] = None,
+    # ):
+    #     """
+    #     Perform simulated annealing with Langevin molecular dynamics on an ASE Atoms object.
+    #     The atoms should have a calculator object attached.
+    #     After the final simulation round, a local minimisation is carried out with BFGS.
+
+    #     Parameters:
+
+    #     atoms: ASE Atoms object
+    #         Atoms to anneal
+    #     start_temp: int
+    #         Starting temperature (K) of first simulation
+    #     end_temp: int
+    #         Starting temperature (K) of final simulation
+    #     cooling_rate: int
+    #         Temperature decrease (K) between each round of annealing
+    #     fmax: float
+    #         Convergence criterion for BFGS minimisation - maximum force per atom. Default 0.5
+    #     traj_path_md: str
+    #         Path to save .traj file of molecular dynamics
+    #     traj_path_bfgs: str
+    #         Path to save .traj file of BFGS minimisation
+
+    #     """
+    #     dyn = Langevin(
+    #         atoms,
+    #         timestep=2 * units.fs,
+    #         temperature_K=10,
+    #         friction=0.001 / units.fs,
+    #     )
+    #     if traj_path_md is not None:
+    #         dyn.attach(Trajectory(traj_path_md, mode="w", atoms=atoms), interval=100)
+
+    #     iters = round((start_temp - end_temp) / cooling_rate)
+    #     for i in range(iters):
+    #         temperature_K = start_temp - cooling_rate * i
+    #         print(f"Setting temp: {temperature_K}")
+    #         MaxwellBoltzmannDistribution(atoms, temperature_K=temperature_K)
+    #         atoms.wrap()
+    #         dyn.run(1000)
+    #     MaxwellBoltzmannDistribution(atoms, temperature_K=end_temp)
+    #     dyn.run(1500)
+
+    #     local_minimisation = BFGS(
+    #         atoms,
+    #         trajectory=(
+    #             Trajectory(traj_path_bfgs, mode="w", atoms=atoms)
+    #             if traj_path_bfgs is not None
+    #             else None
+    #         ),
+    #     )
+    #     local_minimisation.run(steps=10000, fmax=fmax)
+    #     optimised_energy = atoms.get_potential_energy()
+    #     # print("Optimised energy:", potential_energy, "eV")
+    #     return optimised_energy

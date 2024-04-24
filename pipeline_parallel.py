@@ -15,15 +15,15 @@ from surface import TorusSurface
 from triangulation import NonConvexTriangulation
 
 
-n_streams = 5
+n_streams = 1
 n_processes = 56
-seed = 99999
+seed = 99997
 ss = SeedSequence(seed)
 child_seeds = ss.spawn(n_streams)
 streams = [default_rng(s) for s in child_seeds]
 
 
-ns = np.linspace(10, 200, 39)
+ns = np.linspace(10, 200, 191)
 
 args = [
     (
@@ -55,7 +55,7 @@ def launch_parallel(nstream, no_atoms):
     energy = annealing.anneal(atoms, 2500, 100, 500, traj_path_md=f"{traj_filename}")
     coords = atoms.get_positions()
     triangulation = NonConvexTriangulation()
-    simplices = triangulation.triangulate(coords, 0.3) #1/r0 + a little bit (0.05?)
+    simplices = triangulation.triangulate(coords, 0.3)  # 1/r0 + a little bit (0.05?)
     neighbours = find_neighbours_3d(simplices, coords)
     neighbour_counts = get_neighbour_counts_3d(neighbours)
     with paropen(results_filename, "a") as resfile:

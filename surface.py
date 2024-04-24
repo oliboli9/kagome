@@ -208,17 +208,140 @@ class TorusSurface:
 
         return np.array([closest_point(x, y, z) for x, y, z in positions])
 
-class CapsuleSurface():
-    def __init__(self, r, h, centre, density=None, n=None):
-        self.r = r # radius
-        self.h = h # cylinder height
-        self.centre = np.array(centre)
-        # theta, phi = sp.symbols("theta phi")
-        # cx, cy, cz = centre
-        # self.f = self.capsule_point(theta, phi)
-        # self.f_num = sp.lambdify((theta, phi), self.f, "numpy")
 
-        surface_area = 2 * np.pi * r * h + 4 * np.pi * r**2
+class CapsuleSurface:
+    def __init__(self, r, h, centre, density=None, n=None):
+        self.r = r  # Radius of the hemispheres and cylinder
+        self.h = h  # Height of the cylindrical part (excluding hemispheres)
+        self.centre = np.array(centre)  # Centre of the capsule
+        surface_area = 2 * np.pi * r * h + 4 * np.pi * r**2  # Total surface area
+
+        if density is not None:
+            self.n = int(
+                surface_area * density
+            )  # Number of points based on surface area and density
+        elif n is not None:
+            self.n = n
+            self.density = surface_area / n
+        else:
+            raise ValueError("Either density or number of atoms must be provided")
+
+    def point_to_params(self, point):
+        x, y, z = point - self.centre
+        half_height = self.h / 2
+
+        if -half_height <= z <= half_height:
+            # Point is on the cylinder
+            theta = np.arctan2(y, x)
+            return ("cylinder", theta, None, z)
+        else:
+            # Point is on one of the hemispheres
+            if z > half_height:
+                z_hemisphere = z - half_height
+                part = "top hemisphere"
+            else:
+                z_hemisphere = z + half_height
+                part = "bottom hemisphere"
+
+            r_point = np.sqrt(x**2 + y**2 + z_hemisphere**2)
+            theta = np.arccos(z_hemisphere / r_point)
+            phi = np.arctan2(y, x)
+            return (part, theta, phi, r_point)
+
+    def params_to_point(self, part, theta, phi, rh):
+        x = self.r * np.sin(theta) * np.cos(phi)
+        y = self.r * np.sin(theta) * np.sin(phi)
+
+        if part == "cylinder":
+            z = rh
+        elif part == "top hemisphere":
+            z = self.h / 2 + self.r * np.cos(theta)
+        elif part == "bottom hemisphere":
+            z = -self.h / 2 - self.r * np.cos(theta)
+        else:
+            raise ValueError("Invalid part specification")
+
+        return self.centre + np.array([x, y, z])
+
+    def normals(self, positions):
+        x, y, z = positions.T - self.centre
+        normals = np.zeros_like(positions)
+        upper_mask = z > self.h / 2
+        lower_mask = z < -self.h / 2
+        cylinder_mask = ~upper_mask & ~lower_mask
+
+        normals[upper_mask] = positions[upper_mask] - (self.centre + [0, 0, self.h / 2])
+        normals[lower_mask] = positions[lower_mask] - (
+            self.centre + [0, 0, -self.h / 2]
+        )
+        normals[cylinder_mask] = np.column_stack(
+            (x[cylinder_mask], y[cylinder_mask], np.zeros(np.sum(cylinder_mask)))
+        )
+
+        return normals
+
+    def elevate_to_surface(self, positions):
+        return np.array([self.closest_point_on_surface(pos) for pos in positions])
+
+    def closest_point_on_surface(self, point):
+        part, theta, phi, rh = self.point_to_params(point)
+        theta = np.clip(theta, 0, np.pi)
+        phi = phi % (2 * np.pi) if phi is not None else 0
+        if part == "cylinder":
+            rh = np.clip(rh, -self.h / 2, self.h / 2)
+        return self.params_to_point(part, theta, phi, rh)
+
+    # def elevate_to_surface(self, positions):
+    #     cx, cy, cz = self.centre
+
+    #     x = positions[:, 0] - cx
+    #     y = positions[:, 1] - cy
+    #     z = positions[:, 2] - cz
+
+    #     # Distance from the point to the capsule's axis (ignoring z-component)
+    #     dist_to_axis = np.sqrt(x**2 + y**2)
+
+    #     # Allocate array for closest points
+    #     closest_points = np.zeros_like(positions)
+
+    #     # Cylinder part
+    #     cylinder_mask = (z >= -self.h / 2) & (z <= self.h / 2)
+    #     scale = self.r / dist_to_axis[cylinder_mask]
+    #     closest_points[cylinder_mask, 0] = x[cylinder_mask] * scale
+    #     closest_points[cylinder_mask, 1] = y[cylinder_mask] * scale
+    #     closest_points[cylinder_mask, 2] = z[cylinder_mask]
+
+    #     # Hemispheres
+    #     for hemi_sign, z_bound in zip([1, -1], [self.h / 2, -self.h / 2]):
+    #         hemisphere_mask = z * hemi_sign > self.h / 2
+    #         sphere_centre_z = z_bound
+
+    #         # Calculate vectors from hemisphere centres to points
+    #         sphere_to_point_vectors = positions[hemisphere_mask] - np.array(
+    #             [cx, cy, cz + sphere_centre_z]
+    #         )
+    #         norms = np.linalg.norm(sphere_to_point_vectors, axis=1)
+
+    #         # Calculate normalized and scaled vectors
+    #         normalized_scaled_vectors = (
+    #             sphere_to_point_vectors / norms[:, np.newaxis] * self.r
+    #         )
+    #         closest_points[hemisphere_mask] = normalized_scaled_vectors + np.array(
+    #             [cx, cy, cz + sphere_centre_z]
+    #         )
+
+    #     # Translate back to original coordinates
+    #     closest_points += np.array([cx, cy, cz])
+
+    #     return closest_points
+
+
+class CylinderSurface:
+    def __init__(self, r, h, centre, density=None, n=None):
+        self.r = r  # radius
+        self.h = h  # height
+        self.centre = np.array(centre)
+        surface_area = 2 * np.pi * r**2 + 2 * np.pi * r * h
 
         if density is not None:
             self.n = int(surface_area * density)
@@ -227,89 +350,79 @@ class CapsuleSurface():
             self.density = surface_area / n
         else:
             raise ValueError("Either density or number of atoms must be provided")
-        
-    def capsule_point(self, theta, phi):
-        cx, cy, cz = self.centre
 
-        if 0 <= phi <= np.pi/2:  # Upper hemisphere
-            z = cz + self.r * np.cos(phi) + self.h/2
-            x = cx + self.r * np.sin(phi) * np.cos(theta)
-            y = cy + self.r * np.sin(phi) * np.sin(theta)
-        elif np.pi/2 < phi < 3*np.pi/2:  # Cylindrical part
-            z = cz + (phi - np.pi) * (self.h / np.pi)
-            x = cx + self.r * np.cos(theta)
-            y = cy + self.r * np.sin(theta)
-        else:  # Lower hemisphere
-            z = cz - self.r * np.cos(phi) - self.h/2
-            x = cx - self.r * np.sin(phi) * np.cos(theta)
-            y = cy - self.r * np.sin(phi) * np.sin(theta)
+    def elevate_to_surface(self, positions):
+        def closest_point_on_cylinder(point):
+            x, y, z = point
+            (
+                cx,
+                cy,
+                cz,
+            ) = self.centre
+            h = self.h
+            r = self.r
+            lower_z = cz - h / 2
+            upper_z = cz + h / 2
 
-        return x, y, z
+            # Project (x, y) onto the circle of radius r centered at (cx, cy)
+            dx, dy = x - cx, y - cy
+            dist_to_center = np.sqrt(dx**2 + dy**2)
+            projected_x = cx + r * (dx / dist_to_center)
+            projected_y = cy + r * (dy / dist_to_center)
+
+            # Clamp z to be within the bounds of the cylinder's height
+            if z < lower_z:
+                # Point is below the bottom cap
+                projected_z = lower_z
+                if dx**2 + dy**2 < r:
+                    projected_x = x
+                    projected_y = y
+            elif z > upper_z:
+                # Point is above the top cap
+                projected_z = upper_z
+                if dx**2 + dy**2 < r:
+                    projected_x = x
+                    projected_y = y
+            else:
+                # Point is within the height of the cylinder
+                projected_z = z
+                if r - dist_to_center > upper_z - z:
+                    projected_x = x
+                    projected_y = y
+                    projected_z = upper_z
+                if r - dist_to_center > z - lower_z:
+                    projected_x = x
+                    projected_y = y
+                    projected_z = lower_z
+
+            return projected_x, projected_y, projected_z
+
+        return np.array([closest_point_on_cylinder(point) for point in positions])
 
     def normals(self, positions):
-        cx, cy, cz = self.centre
+        def normal_vector(point):
+            x, y, z = point
+            (
+                cx,
+                cy,
+                cz,
+            ) = self.centre
+            h = self.hr = self.r
+            lower_z = cz - h / 2
+            upper_z = cz + h / 2
 
-        x = positions[:, 0] - cx
-        y = positions[:, 1] - cy
-        z = positions[:, 2] - cz
+            if z == lower_z:
+                # Point is on the bottom cap
+                return (0, 0, -1)
+            elif z == upper_z:
+                # Point is on the top cap
+                return (0, 0, 1)
+            else:
+                # Point is on the curved surface
+                dx, dy = x - cx, y - cy
+                return (dx, dy, 0)
 
-        normals = np.zeros_like(positions)
-
-        upper_mask = z > self.h / 2
-        lower_mask = z < -self.h / 2
-        cylinder_mask = ~upper_mask & ~lower_mask
-
-        # Calculate normals for the upper hemisphere
-        centre_z_upper = self.h / 2
-        normals[upper_mask] = np.column_stack((x[upper_mask], y[upper_mask], z[upper_mask] - centre_z_upper))
-
-        # Calculate normals for the lower hemisphere
-        centre_z_lower = -self.h / 2
-        normals[lower_mask] = np.column_stack((x[lower_mask], y[lower_mask], z[lower_mask] - centre_z_lower))
-
-        # Calculate normals for the cylindrical part
-        normals[cylinder_mask] = np.column_stack((x[cylinder_mask], y[cylinder_mask], np.zeros(np.sum(cylinder_mask))))
-
-        return normals
-        
-    def elevate_to_surface(self, positions):
-        cx, cy, cz = self.centre
-
-        x = positions[:, 0] - cx
-        y = positions[:, 1] - cy
-        z = positions[:, 2] - cz
-
-        # Distance from the point to the capsule's axis (ignoring z-component)
-        dist_to_axis = np.sqrt(x**2 + y**2)
-
-        # Allocate array for closest points
-        closest_points = np.zeros_like(positions)
-
-        # Cylinder part
-        cylinder_mask = (z >= -self.h/2) & (z <= self.h/2)
-        scale = self.r / dist_to_axis[cylinder_mask]
-        closest_points[cylinder_mask, 0] = x[cylinder_mask] * scale
-        closest_points[cylinder_mask, 1] = y[cylinder_mask] * scale
-        closest_points[cylinder_mask, 2] = z[cylinder_mask]
-
-        # Hemispheres
-        for hemi_sign, z_bound in zip([1, -1], [self.h/2, -self.h/2]):
-            hemisphere_mask = (z * hemi_sign > self.h/2)
-            sphere_centre_z = z_bound
-
-            # Calculate vectors from hemisphere centres to points
-            sphere_to_point_vectors = positions[hemisphere_mask] - np.array([cx, cy, cz + sphere_centre_z])
-            norms = np.linalg.norm(sphere_to_point_vectors, axis=1)
-            
-            # Calculate normalized and scaled vectors
-            normalized_scaled_vectors = sphere_to_point_vectors / norms[:, np.newaxis] * self.r
-            closest_points[hemisphere_mask] = normalized_scaled_vectors + np.array([cx, cy, cz + sphere_centre_z])
-
-        # Translate back to original coordinates
-        closest_points += np.array([cx, cy, cz])
-
-        return closest_points
-
+        return np.array([normal_vector(pos) for pos in positions])
 
 
 class SurfaceConstraint:

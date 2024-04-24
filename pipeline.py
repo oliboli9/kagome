@@ -13,7 +13,7 @@ from kagome import Kagome
 from surface import TorusSurface
 from triangulation import NonConvexTriangulation
 
-surface = TorusSurface(5, 2, (15, 15, 15), n=150)
+surface = TorusSurface(5, 2, (15, 15, 15), n=100)
 r0 = surface.density / 2
 calculator = RadialPotential(r0=r0)
 
@@ -33,11 +33,14 @@ with open(filename, "w") as file:
 annealing.anneal(atoms, 2000, 100, 500, traj_path_md=filename)
 
 #### Triangulation - matlab
-# traj = Trajectory(f"torus.traj")
-# atoms = traj[-1]
+traj = Trajectory(filename)
+atoms = traj[-1]
 coords = atoms.get_positions()
+view(atoms)
 triangulation = NonConvexTriangulation()
-simplices = triangulation.triangulate(coords, 0.3)
+# print(1 / (r0 * 2))
+simplices = triangulation.triangulate(coords, 0.4)
+
 
 #### Kagome
 kagome = Kagome(simplices, coords, surface=surface, r0=r0 / 2)
@@ -50,4 +53,4 @@ ax2.view_init(elev=90, azim=0)
 kagome.plot_weavers(ax)
 kagome.straighten_weavers()
 kagome.plot_weavers(ax2)
-plt.savefig("torus")
+plt.show()

@@ -16,7 +16,7 @@ from calculator import RadialPotential
 
 n = 100
 
-cell = Cell.fromcellpar([25, 25, 0, 60, 60, 60])
+cell = Cell.fromcellpar([30, 30, 0, 90, 90, 90])
 
 random_positions = np.random.rand(n, 3)  # n random positions in [0, 1) range
 
@@ -68,7 +68,7 @@ dyn = Langevin(
     atoms,
     timestep=2.0 * units.fs,
     temperature_K=11,  # temperature in K
-    friction=0.001 / units.fs,
+    friction=0.01 / units.fs,
 )
 
 """
@@ -108,14 +108,30 @@ def printenergy(a):
 printenergy(atoms)
 for i in range(20):
     MaxwellBoltzmannDistribution(atoms, temperature_K=(2000 - i * 100))
-    dyn.run(1000)
+    dyn.run(2000)
     printenergy(atoms)
+
+# Alternative
+MaxwellBoltzmannDistribution(atoms, temperature_K=2000)
+iters = round((2000 - 0) / 100)
+for i in range(1, iters + 1):
+    temperature_K = 2000 - 100 * i
+    dyn = Langevin(
+        atoms,
+        timestep=2 * units.fs,
+        temperature_K=temperature_K,
+        friction=0.01 / units.fs,
+    )
+    # dyn.attach(wrap_and_write, interval=100)
+    print(f"Heat bath temp: {temperature_K}")
+    dyn.run(5000)
 
 
 atoms.wrap()
 # Get the optimized atomic positions and potential energy
 optimised_positions = atoms.get_positions()
 optimised_energy = atoms.get_potential_energy()
+
 
 # print("Optimised positions:", optimised_positions)
 print("Optimised potential energy:", optimised_energy)
@@ -133,3 +149,6 @@ view(optimised_atoms)
 # plt.triplot(points[:, 0], points[:, 1], tri.simplices)
 # plt.plot(points[:, 0], points[:, 1], "o")
 # plt.show()
+
+local_minimisation = BFGS(atoms)
+local_minimisation.run(steps=10000, fmax=0.001)

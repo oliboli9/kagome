@@ -10,10 +10,10 @@ from ase.visualize import view
 from annealing import AnnealingSimulator
 from calculator import RadialPotential
 from kagome import Kagome
-from surface import CapsuleSurface
+from surface import CylinderSurface
 from triangulation import ConvexTriangulation
 
-surface = CapsuleSurface(5, 2, (15, 15, 15), n=50)
+surface = CylinderSurface(10, 20, (15, 15, 15), n=100)
 r0 = surface.density / 2
 calculator = RadialPotential(r0=r0)
 
@@ -27,6 +27,7 @@ streams = [default_rng(s) for s in child_seeds]
 #### Annealing
 annealing = AnnealingSimulator(surface, calculator)
 atoms = annealing.setup_atoms(streams[0])
+view(atoms)
 pos = atoms.get_positions()
-print(pos[0])
-print(surface.normals(pos[:1]))
+# print(pos[0])
+# print(surface.normals(pos[:1]))

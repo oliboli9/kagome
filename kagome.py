@@ -174,7 +174,7 @@ class Kagome:
 
     def straighten_weavers(self):
         local_minimisation = BFGS(self.atoms)
-        local_minimisation.run(steps=30)
+        local_minimisation.run(steps=100, fmax=0.4)
 
     def plot_weavers(self, ax):
         positions = self.atoms.get_positions()
