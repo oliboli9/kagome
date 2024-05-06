@@ -6,15 +6,17 @@ from ase.neighborlist import neighbor_list
 
 def apply_mic(distance, cell, pbc):
     """
-    Apply the minimum image convention to a distance vector.
+    Apply the minimum image convention to a distance vector
 
     Parameters:
+    ----------
     distance (array): The distance vector between two atoms.
     cell (array): The simulation cell dimensions.
     pbc (array): Periodic boundary conditions.
 
     Returns:
-    array: Adjusted distance vector following MIC.
+    ----------
+    Adjusted distance vector following MIC.
     """
     for dim in range(3):
         if pbc[dim]:
@@ -34,23 +36,31 @@ def apply_mic(distance, cell, pbc):
 
 
 class RadialPotential(Calculator):
-    """Radial potential."""
+    """
+    Radial potential:
+    Atomic potential is defined to decrease quadratically between two neighbours up to a cutoff radius r0.
+    There is no interaction between atoms which have a distance > r0 between them.
+    """
 
     implemented_properties = ["energy", "forces"]
-    default_parameters = {"V0": 1.0, "r0": 4}
+    default_parameters = {"V0": 1.0}
 
     nolabel = True
 
     def __init__(self, **kwargs):
         """
-        Parameters
+        Parameters:
         ----------
         V0: float
-        Energy scale, default 1.0
+            Energy scale, default 1.0
         r0: float
-        Range of quadratic potential, default 4.0
+            Range of quadratic potential
         """
         Calculator.__init__(self, **kwargs)
+
+        if "r0" not in kwargs:
+            raise ValueError("The 'r0' parameter must be provided for RadialPotential")
+        self.r0 = kwargs["r0"]
 
     def calculate(
         self,
@@ -87,18 +97,19 @@ class RadialPotential(Calculator):
 
 class KagomeRadialPotential(Calculator):
     """
-    Kagome potential:
-    The kagome atoms are points along kagome weavers. (Midpoints of edges in triangulation of desired surface)
-    Energy is minimised for straight weavers and increases as weavers are made to bend
+    Kagome+Radial potential:
+    Atoms experience both radially repulsive and 'kagome' interactions.
+    The 'strength' of the two interactions is controlled by the energy scale parameters:
+    Radial (V0 energy scale): Atomic potential is defined to decrease quadratically between two neighbours up to a cutoff radius r0.
+    Kagome (K0 energy scale): Atoms are points along Kagome weavers with neighbours lying on one weaver.
+            Atomic potential is defined to be minimal for straight weavers and increases as weavers are made to bend
     """
 
     implemented_properties = ["energy", "forces"]
     default_parameters = {
-        # "V0": 1.0,
         "V0": 2.0,
-        "r0": 1,
         "K0": 1.0,
-    }  # this config makes the radial and kagome force have the same order of magnitude "K0": 10000.0,
+    }
 
     nolabel = True
 
@@ -106,16 +117,21 @@ class KagomeRadialPotential(Calculator):
         """
         Parameters
         ----------
-        V0: float
-            Energy scale, default 1.0
-        r0: float
-            Range of quadratic potential, default 1.0
-        K0: float
-            Kagome energy scale, default 10000.0
+        r0: float (required)
+            Range of quadratic potential
         neighbour_dict: dict (required)
-            A dictionary where for each kagome atom its 4 kagome neighbours are stored as pairs that lie on the same weaver
+            A dictionary where for each kagome atom its 4 kagome neighbours are stored as pairs.
+            Neighbours from the same triangle are in the same tuple.
+        V0: float
+            Energy scale, default 2.0
+        K0: float
+            Kagome energy scale, default 1.0
         """
         Calculator.__init__(self, **kwargs)
+
+        if "r0" not in kwargs:
+            raise ValueError("The 'r0' parameter must be provided for RadialPotential")
+        self.r0 = kwargs["r0"]
 
         if "neighbour_dict" not in kwargs:
             raise ValueError(
@@ -157,10 +173,6 @@ class KagomeRadialPotential(Calculator):
         positions = atoms.get_positions()
         cell = atoms.get_cell()
         pbc = atoms.get_pbc()
-        # forces = np.zeros((len(atoms), 3))
-        # energy = 0
-        # print(f"radial force:{forces[0]}")
-        # print(f"radial energy:{energy}")
 
         for atom_index, neighbours in neighbour_dict.items():
             n1, n2 = neighbours[0]
@@ -177,8 +189,7 @@ class KagomeRadialPotential(Calculator):
                 vec2_normalized = vec2 / norm_vec2
 
                 dot_product = np.dot(vec1_normalized, vec2_normalized)
-                energy_contribution = K0 * (1 - dot_product)
-                # print(f"kagome energy {energy_contribution}")
+                energy_contribution = K0 * (1 + dot_product)
                 energy += energy_contribution
 
                 # Calculate force contributions
@@ -204,7 +215,7 @@ class KagomePotential(Calculator):
     """
     Kagome potential:
     The kagome atoms are points along kagome weavers. (Midpoints of edges in triangulation of desired surface)
-    Energy is minimised for straight weavers and increases as weavers are made to bend
+    Atomic potential is defined to be minimal for straight weavers and increases as weavers are made to bend
     """
 
     implemented_properties = ["energy", "forces"]
@@ -260,7 +271,7 @@ class KagomePotential(Calculator):
                 vec2_normalized = vec2 / norm_vec2
 
                 dot_product = np.dot(vec1_normalized, vec2_normalized)
-                energy_contribution = V0 * (1 - dot_product)
+                energy_contribution = V0 * (1 + dot_product)
                 energy += energy_contribution
 
                 # Calculate force contributions
