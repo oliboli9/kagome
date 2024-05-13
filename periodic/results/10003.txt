@@ -1,0 +1,21 @@
+n r0 friction energy neighbours
+n r0 friction energy neighbours
+n r0 friction energy neighbours
+0 4.242640687119286 10.180505671156725 17.17974371642389 Counter({6: 78, 7: 11, 5: 11})
+n r0 friction energy neighbours
+0 4.242640687119286 0.00010180505671156725 17.15347100192598 Counter({6: 25, 5: 18, 7: 14, 8: 2, 4: 1, 9: 1})
+n r0 friction energy neighbours
+n r0 friction energy neighbours
+n r0 friction energy neighbours
+0 4.242640687119286 20.36101134231345 17.15689894182004 Counter()
+n r0 friction energy neighbours
+n r0 friction energy neighbours
+n r0 friction energy neighbours
+n r0 friction energy neighbours
+n r0 friction energy neighbours
+n r0 friction energy neighbours
+n r0 friction energy neighbours
+n r0 friction energy neighbours
+n r0 friction energy neighbours
+n r0 friction energy neighbours
+n r0 friction energy neighbours

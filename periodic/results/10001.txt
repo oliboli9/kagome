@@ -1,0 +1,120 @@
+n surf.density surf.n r0 energy neighbours
+n surf.density surf.n r0 energy neighbours
+n surf.density surf.n r0 energy neighbours
+n surf.density surf.n r0 energy neighbours
+n surf.density surf.n r0 energy neighbours
+n surf.density surf.n r0 energy neighbours
+n surf.density surf.n r0 energy neighbours
+n surf.density surf.n r0 energy neighbours
+n surf.density surf.n r0 energy neighbours
+n surf.density surf.n r0 energy neighbours
+n surf.density surf.n r0 energy neighbours
+n surf.density surf.n r0 energy neighbours
+n surf.density surf.n r0 energy neighbours
+n surf.density surf.n r0 energy neighbours
+n surf.density surf.n r0 energy neighbours
+n surf.density surf.n r0 energy neighbours
+n surf.density surf.n r0 energy neighbours
+n surf.density surf.n r0 energy neighbours
+n surf.density surf.n r0 energy neighbours
+n surf.density surf.n r0 energy neighbours
+n surf.density surf.n r0 energy neighbours
+n surf.density surf.n r0 energy neighbours
+n surf.density surf.n r0 energy neighbours
+n surf.density surf.n r0 energy neighbours
+n surf.density surf.n r0 energy neighbours
+n surf.density surf.n r0 energy neighbours
+n surf.density surf.n r0 energy neighbours
+n surf.density surf.n r0 energy neighbours
+n surf.density surf.n r0 energy neighbours
+n surf.density surf.n r0 energy neighbours
+n surf.density surf.n r0 energy neighbours
+n surf.density surf.n r0 energy neighbours
+n surf.density surf.n r0 energy neighbours
+n surf.density surf.n r0 energy neighbours
+n surf.density surf.n r0 energy neighbours
+n surf.density surf.n r0 energy neighbours
+n surf.density surf.n r0 energy neighbours
+n surf.density surf.n r0 energy neighbours
+n surf.density surf.n r0 energy neighbours
+n surf.density surf.n r0 energy neighbours
+n surf.density surf.n r0 energy neighbours
+n surf.density surf.n r0 energy neighbours
+n surf.density surf.n r0 energy neighbours
+n surf.density surf.n r0 energy neighbours
+n surf.density surf.n r0 energy neighbours
+n surf.density surf.n r0 energy neighbours
+n surf.density surf.n r0 energy neighbours
+n surf.density surf.n r0 energy neighbours
+n surf.density surf.n r0 energy neighbours
+n surf.density surf.n r0 energy neighbours
+n surf.density surf.n r0 energy neighbours
+n surf.density surf.n r0 energy neighbours
+n surf.density surf.n r0 energy neighbours
+n surf.density surf.n r0 energy neighbours
+0 12.148003803837238 81 4.714045207910317 10.802246669943454
+n surf.density surf.n r0 energy neighbours
+0 9.839883081108162 100 4.242640687119286 13.153495781178606
+n surf.density surf.n r0 energy neighbours
+n surf.density surf.n r0 energy neighbours
+n surf.density surf.n r0 energy neighbours
+n surf.density surf.n r0 energy neighbours
+n surf.density surf.n r0 energy neighbours
+0 12.148003803837238 81 4.714045207910317 10.70488284846433
+n surf.density surf.n r0 energy neighbours
+0 12.148003803837238 81 4.714045207910317 10.774491468591005
+n surf.density surf.n r0 energy neighbours
+n surf.density surf.n r0 energy neighbours
+n surf.density surf.n r0 energy
+n surf.density surf.n r0 energy
+0 12.148003803837238 81 4.714045207910317 10.691401888720499
+n surf.density surf.n r0 energy
+0 12.148003803837238 81 4.714045207910317 10.736781738666119
+n surf.density surf.n r0 energy
+0 12.148003803837238 81 4.714045207910317 10.724459075298189
+n surf.density surf.n r0 energy
+0 12.148003803837238 81 4.714045207910317 10.738361035673229
+n surf.density surf.n r0 energy
+0 12.148003803837238 81 4.714045207910317 10.749503096449235
+n surf.density surf.n r0 energy
+0 12.148003803837238 81 4.714045207910317 11.493039309751069
+n surf.density surf.n r0 energy
+0 12.148003803837238 81 4.714045207910317 11.75161161377487
+n surf.density surf.n r0 energy
+0 12.148003803837238 81 4.714045207910317 11.769999635891345
+n surf.density surf.n r0 energy
+0 12.148003803837238 81 4.714045207910317 11.93375942761017
+n surf.density surf.n r0 energy
+0 12.148003803837238 81 4.714045207910317 10.894818155858612
+n surf.density surf.n r0 energy
+n surf.density surf.n r0 energy
+0 12.148003803837238 81 4.714045207910317 11.06342346793106
+n surf.density surf.n r0 energy
+0 12.148003803837238 81 4.714045207910317 11.101705696246594
+n surf.density surf.n r0 energy
+0 12.148003803837238 81 4.714045207910317 10.997135527699157
+n surf.density surf.n r0 energy
+0 12.148003803837238 81 4.714045207910317 11.023912115721016
+n surf.density surf.n r0 energy
+n surf.density surf.n r0 energy
+n surf.density surf.n r0 energy
+n surf.density surf.n r0 energy
+n surf.density surf.n r0 energy
+n surf.density surf.n r0 energy
+n surf.density surf.n r0 energy
+n surf.density surf.n r0 energy
+n surf.density surf.n r0 energy
+0 12.148003803837238 81 4.714045207910317 10.756359120150774
+n surf.density surf.n r0 energy
+0 12.148003803837238 81 4.714045207910317 10.712460006343608
+n surf.density surf.n r0 energy
+n surf.density surf.n r0 energy
+0 12.148003803837238 81 4.714045207910317 10.795518240903785
+n surf.density surf.n r0 energy
+n surf.density surf.n r0 energy
+0 36.00394757122116 25 8.485281374238571 4.355282956652589
+n surf.density surf.n r0 energy
+n surf.density surf.n r0 energy
+n surf.density surf.n r0 energy
+n surf.density surf.n r0 energy
+n surf.density surf.n r0 energy
